@@ -1,0 +1,1 @@
+{"sample_id": "david_relational_person_centric_0", "vaccount": "david", "task": "relational_person_centric", "question": "Is David's mother present in the photos from 2011-04-15?", "answer": "Yes, David's mother, Zosime, is present in the photos from this event.", "answer_type": "open_generation", "reference_ids": ["david-e-0", "david-c-david", "david-c-zosime"]}

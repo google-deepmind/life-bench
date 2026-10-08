@@ -1,0 +1,1 @@
+{"sample_id": "david_fine_grained_scene_0", "vaccount": "david", "task": "fine_grained_scene", "question": "In the photo from April 15, 2011, where David is taking a selfie in a car, who is sitting next to him?", "answer": "Zosime is sitting in the driver's seat next to him.", "answer_type": "open_generation", "reference_ids": ["david-e-0", "david-c-david", "david-c-zosime"]}

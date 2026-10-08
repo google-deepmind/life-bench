@@ -1,0 +1,1 @@
+{"sample_id": "david_visual_concept_recognition_41", "vaccount": "david", "task": "visual_concept_recognition", "question": "Is David's mother visible in this picture?", "answer": "Yes", "answer_type": "binary", "question_image_id": "david-s-10", "question_image_path": "questions/images/david-s-10.jpg", "reference_ids": ["david-c-david", "david-c-zosime"]}

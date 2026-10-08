@@ -1,0 +1,1 @@
+{"sample_id": "david_preference_and_persona_0", "vaccount": "david", "task": "preference_and_persona", "question": "Based on David's history, what is his most frequent type of activity?", "answer": "Based on the provided events, David's most frequent type of activity is fishing.", "answer_type": "open_generation", "reference_ids": []}

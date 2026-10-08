@@ -1,0 +1,1 @@
+{"sample_id": "david_text_concept_qa_22", "vaccount": "david", "task": "text_concept_qa", "question": "What is the eye color of Rylen's grandfather? (A) Hazel (B) Green (C) Blue (D) Grey", "answer": "C", "answer_type": "multiple_choice", "reference_ids": ["david-c-rylen", "david-c-david"]}

@@ -1,0 +1,23 @@
+{
+  "vaccount": "david",
+  "concepts": [
+    {
+      "concept_id": "david-c-david",
+      "name": "David",
+      "role": "Account Owner",
+      "portrait_path": "concepts/david/portraits/david.jpg"
+    },
+    {
+      "concept_id": "david-c-rylen",
+      "name": "Rylen",
+      "role": "Owner's Grandson",
+      "portrait_path": "concepts/david/portraits/rylen.jpg"
+    },
+    {
+      "concept_id": "david-c-zosime",
+      "name": "Zosime",
+      "role": "Owner's Mother",
+      "portrait_path": "concepts/david/portraits/zosime.jpg"
+    }
+  ]
+}

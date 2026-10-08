@@ -1,0 +1,7 @@
+{"sample_id": "david_scene_and_activity_0", "Result": "Correct", "Reason": "The candidate correctly identifies the nostalgic trip revisiting places from Zosime's past."}
+{"sample_id": "david_direct_person_centric_0", "Result": "Correct", "Reason": "Both attendees match the ground truth."}
+{"sample_id": "david_relational_person_centric_0", "Result": "Correct", "Reason": "The candidate correctly states that Zosime is present."}
+{"sample_id": "david_fine_grained_scene_0", "Result": "Wrong", "Reason": "The candidate names Rylen; the ground truth is Zosime."}
+{"sample_id": "david_preference_and_persona_0", "Result": "Correct", "Reason": "Fishing matches the ground truth."}
+{"sample_id": "david_frequency_and_counting_0", "Result": "Wrong", "Reason": "The candidate count (6) does not match the ground truth (8)."}
+{"sample_id": "david_relational_temporal_reasoning_0", "Result": "Correct", "Reason": "Rylen matches the ground truth."}

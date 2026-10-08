@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lifebench"
+version = "1.0.0"
+description = "Evaluation code for Life-Bench"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.9"
+authors = [{name = "Google DeepMind"}]
+dependencies = []
+
+[project.optional-dependencies]
+hf = ["huggingface_hub"]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/google-deepmind/life-bench"
+Dataset = "https://huggingface.co/datasets/google/life-bench"
+Paper = "https://arxiv.org/abs/2602.19001"
+
+[project.scripts]
+lifebench-evaluate = "lifebench.evaluate:main"
+
+[tool.setuptools]
+packages = ["lifebench"]
