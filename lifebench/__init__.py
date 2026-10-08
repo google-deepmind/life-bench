@@ -16,6 +16,11 @@
 
 from lifebench.constants import CATEGORIES, EASY_TASKS, RECALL_TASKS, TASK_NAMES, TASKS
 from lifebench.judge import JUDGE_PROMPT, build_judge_prompt
-from lifebench.metrics import exact_match, parse_binary, parse_multiple_choice, recall_at_k
+from lifebench.metrics import clean_answer
+from lifebench.metrics import exact_match
+from lifebench.metrics import parse_answer
+from lifebench.metrics import parse_binary
+from lifebench.metrics import parse_multiple_choice
+from lifebench.metrics import recall_at_k
 
 __version__ = "1.0.0"

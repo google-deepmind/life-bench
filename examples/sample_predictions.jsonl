@@ -1,6 +1,6 @@
 {"sample_id": "david_text_concept_qa_22", "prediction": "Answer: C", "retrieved_ids": ["david-c-david", "david-c-rylen", "david-e-3-0", "david-e-3-1", "david-e-18-2"]}
-{"sample_id": "david_visual_concept_recognition_41", "prediction": "Yes, David's mother Zosime is visible at the table.", "retrieved_ids": ["david-c-zosime", "david-e-0-1", "david-e-33-2", "david-c-david", "david-e-23-0"]}
-{"sample_id": "david_concept_vqa_50", "prediction": "The answer is (A).", "retrieved_ids": ["david-e-0-2", "david-c-david", "david-e-23-1", "david-e-23-3", "david-c-zosime"]}
+{"sample_id": "david_visual_concept_recognition_41", "prediction": "**Answer:** Yes", "retrieved_ids": ["david-c-zosime", "david-e-0-1", "david-e-33-2", "david-c-david", "david-e-23-0"]}
+{"sample_id": "david_concept_vqa_50", "prediction": "Final Answer: (A)", "retrieved_ids": ["david-e-0-2", "david-c-david", "david-e-23-1", "david-e-23-3", "david-c-zosime"]}
 {"sample_id": "david_scene_and_activity_0", "prediction": "The gathering on 2011-04-15 was a trip with Zosime to revisit places from her past, including a cemetery and an old house.", "retrieved_ids": ["david-e-0-0", "david-e-0-3", "david-c-zosime", "david-c-david", "david-e-30-1"]}
 {"sample_id": "david_direct_person_centric_0", "prediction": "David and his mother Zosime.", "retrieved_ids": ["david-e-30-1", "david-e-0-4", "david-c-david", "david-c-zosime", "david-e-9-0"]}
 {"sample_id": "david_relational_person_centric_0", "prediction": "Yes. Zosime, David's mother, appears in the photos from 2011-04-15.", "retrieved_ids": ["david-c-zosime", "david-c-david", "david-e-23-0", "david-e-23-1", "david-e-33-0"]}

@@ -135,7 +135,7 @@ No dependencies are required. `pip install -e ".[hf]"` adds `huggingface_hub` fo
 
 ## Evaluation
 
-Multiple-choice and binary questions are scored by exact match; open-generation questions are judged against the ground-truth answer with the LLM-as-a-Judge prompt in [`lifebench/judge.py`](lifebench/judge.py), using a judge model of your choice. The overall score is the average of the 10 per-task accuracies. Event-level Recall@k is computed over the 7 Concept Identification and Event Understanding tasks, where retrieving any image from a gold event counts as a hit.
+Multiple-choice and binary questions are scored by exact match: the response is cleaned (answer labels such as `Answer:`, markdown emphasis, brackets and trailing punctuation are removed) and must reduce to a single option letter or `Yes`/`No`. Responses that do not are not exact-match scorable; they are counted and listed in the report, and are judged with the same LLM-as-a-Judge prompt as open-generation questions rather than being scored as wrong. Open-generation questions are judged against the ground-truth answer with the LLM-as-a-Judge prompt in [`lifebench/judge.py`](lifebench/judge.py), using a judge model of your choice. The overall score is the average of the 10 per-task accuracies. Event-level Recall@k is computed over the 7 Concept Identification and Event Understanding tasks, where retrieving any image from a gold event counts as a hit.
 
 **1. Predictions.** Run your system on each question and write one JSON record per line:
 
@@ -146,10 +146,10 @@ Multiple-choice and binary questions are scored by exact match; open-generation 
 | Field | Required | Description |
 | :--- | :---: | :--- |
 | `sample_id` | ✓ | Question id. |
-| `prediction` | ✓ | Model response. For multiple-choice and binary questions the option letter (`A`–`D`) or `Yes`/`No` is parsed from the response. |
+| `prediction` | ✓ | Model response. For multiple-choice and binary questions it should reduce to the option letter (`A`–`D`) or `Yes`/`No` (e.g. `C`, `(C)`, `Answer: C`); otherwise it is judged like an open-generation response. |
 | `retrieved_ids` | | Retrieved `image_id` and `concept_id` values in rank order. Required for Recall@k. |
 
-**2. Export judge prompts.** Score exact-match questions and write the judge prompt of every open-generation question to `judge_prompts.jsonl` as `{"sample_id": ..., "prompt": ...}`:
+**2. Export judge prompts.** Score exact-match questions and write the judge prompt of every question that needs a judgment (open-generation, and unparseable multiple-choice / binary) to `judge_prompts.jsonl` as `{"sample_id": ..., "prompt": ...}`:
 
 ```bash
 python -m lifebench.evaluate --predictions predictions.jsonl --data_dir /path/to/life-bench \
@@ -195,7 +195,7 @@ Overall                                                      10    0.7000    0.6
 ---------------------------------------------------------------------------------------------
 ```
 
-`report.json` contains the per-task, per-category, overall, and per-Vaccount scores and the per-question results. `--tasks` and `--vaccounts` select a subset; `--include_easy` additionally scores the single-hop questions in a separate block; `--recall_k` sets the recall cutoffs (default `3 5`).
+`report.json` contains the per-task, per-category, overall, and per-Vaccount scores, the per-question results, and the `sample_id`s of unparseable multiple-choice / binary predictions (`unparseable_samples`). `--tasks` and `--vaccounts` select a subset; `--include_easy` additionally scores the single-hop questions in a separate block; `--recall_k` sets the recall cutoffs (default `3 5`).
 
 The output above is produced by the files in [`examples/`](examples/):
 

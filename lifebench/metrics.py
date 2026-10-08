@@ -18,39 +18,75 @@ import re
 from typing import Dict, List, Optional, Sequence
 
 
-def parse_multiple_choice(text: str) -> Optional[str]:
-  """Extracts the option letter (A-D) from a model response."""
-  text = _answer_line(text)
-  m = re.search(r"\b([A-D])\b", text)
-  return m.group(1) if m else None
+# Leading labels such as "Answer:", "Final Answer:", "The answer is", "Option:".
+_LABEL = re.compile(
+    r"^(?:the\s+)?(?:final|correct|predicted|my)?[\s_]*"
+    r"(?:answer|option|choice|prediction|response)\s*(?:is|:|=|-)?\s*[:=]?\s*",
+    flags=re.IGNORECASE,
+)
+_MARKDOWN = re.compile(r"[*_`#]+")
+_WRAPPERS = "()\"'“”‘’"
+_TRAILING = ".,;:!)"
 
 
-def parse_binary(text: str) -> Optional[str]:
-  """Extracts Yes/No from a model response."""
-  m = re.search(r"\b(yes|no)\b", _answer_line(text), flags=re.IGNORECASE)
-  return m.group(1).capitalize() if m else None
+def clean_answer(text) -> str:
+  """Reduces a model response to its bare final answer.
 
-
-def _answer_line(text) -> str:
+  Takes the line holding the answer label (if any), then strips markdown
+  emphasis, answer labels, surrounding brackets/quotes and trailing
+  punctuation. The result is meant to be compared against an option letter
+  or Yes/No; it is not an attempt to interpret free-form text.
+  """
   text = "" if text is None else str(text).strip()
   for line in text.split("\n"):
     if "answer:" in line.lower():
-      return line.split(":", 1)[-1].strip()
+      text = line.split(":", 1)[-1]
+      break
+  text = _MARKDOWN.sub("", text).strip()
+  text = _LABEL.sub("", text, count=1).strip()
+  text = text.strip(_WRAPPERS).rstrip(_TRAILING).strip(_WRAPPERS).strip()
   return text
 
 
-def exact_match(prediction, answer: str, answer_type: str) -> bool:
+def parse_multiple_choice(text) -> Optional[str]:
+  """Returns the option letter (A-D) if the cleaned response is exactly one.
+
+  Returns None when the response cannot be reduced to a single option letter;
+  such responses are not exact-match scorable.
+  """
+  cleaned = clean_answer(text)
+  return cleaned.upper() if re.fullmatch(r"[A-Da-d]", cleaned) else None
+
+
+def parse_binary(text) -> Optional[str]:
+  """Returns "Yes"/"No" if the cleaned response is exactly yes or no.
+
+  Returns None when the response cannot be reduced to yes/no; such responses
+  are not exact-match scorable.
+  """
+  cleaned = clean_answer(text).lower()
+  return cleaned.capitalize() if cleaned in ("yes", "no") else None
+
+
+def parse_answer(prediction, answer_type: str) -> Optional[str]:
+  """Parses a multiple-choice or binary prediction; None if unparseable."""
+  if answer_type == "multiple_choice":
+    return parse_multiple_choice(prediction)
+  if answer_type == "binary":
+    return parse_binary(prediction)
+  raise ValueError(f"parse_answer does not apply to {answer_type}")
+
+
+def exact_match(prediction, answer: str, answer_type: str) -> Optional[bool]:
   """Exact match for multiple-choice and binary questions.
 
-  Unparseable predictions count as wrong.
+  Returns None when the prediction cannot be parsed to an option letter or
+  Yes/No, i.e. the question cannot be scored by exact match.
   """
-  if answer_type == "multiple_choice":
-    parsed = parse_multiple_choice(prediction)
-    return parsed is not None and parsed.upper() == answer.strip().upper()
-  if answer_type == "binary":
-    parsed = parse_binary(prediction)
-    return parsed is not None and parsed.lower() == answer.strip().lower()
-  raise ValueError(f"exact_match does not apply to {answer_type}")
+  parsed = parse_answer(prediction, answer_type)
+  if parsed is None:
+    return None
+  return parsed.lower() == answer.strip().lower()
 
 
 def recall_at_k(

@@ -35,6 +35,7 @@ from lifebench.constants import TASKS
 from lifebench.judge import build_judge_prompt
 from lifebench.metrics import exact_match
 from lifebench.metrics import mean
+from lifebench.metrics import parse_answer
 from lifebench.metrics import recall_at_k
 
 
@@ -45,7 +46,13 @@ def score_questions(
     image_to_event: Dict[str, str],
     recall_k=DEFAULT_RECALL_K,
 ) -> List[dict]:
-  """Scores each question; `correct` is None for unjudged open questions."""
+  """Scores each question.
+
+  `correct` is None for questions that still need a judgment: open-generation
+  questions, and multiple-choice / binary questions whose prediction could
+  not be parsed to an option letter or Yes/No (`unparseable` is True).
+  Missing predictions are scored as wrong.
+  """
   rows = []
   for q in questions:
     sid = q["sample_id"]
@@ -59,10 +66,15 @@ def score_questions(
         "correct": None,
     }
     prediction = pred.get("prediction") if pred else None
-    if q["answer_type"] in ("multiple_choice", "binary"):
-      row["correct"] = exact_match(prediction, q["answer"], q["answer_type"])
-    elif pred is None:
+    if pred is None:
       row["correct"] = False
+    elif q["answer_type"] in ("multiple_choice", "binary"):
+      row["parsed"] = parse_answer(prediction, q["answer_type"])
+      row["unparseable"] = row["parsed"] is None
+      if not row["unparseable"]:
+        row["correct"] = exact_match(prediction, q["answer"], q["answer_type"])
+      elif sid in judgments:
+        row["correct"] = judgments[sid] == "correct"
     elif sid in judgments:
       row["correct"] = judgments[sid] == "correct"
 
@@ -83,6 +95,7 @@ def _task_summary(rows: List[dict], recall_k) -> dict:
   summary = {
       "n": n,
       "missing_predictions": sum(1 for r in rows if not r["has_prediction"]),
+      "unparseable": sum(1 for r in rows if r.get("unparseable")),
       "unjudged": unjudged,
       "accuracy": None
       if unjudged or not n
@@ -149,6 +162,11 @@ def aggregate(rows: List[dict], recall_k=DEFAULT_RECALL_K) -> dict:
       "tasks": tasks,
       "single_hop": easy,
       "vaccounts": vaccounts,
+      # Multiple-choice / binary questions whose prediction could not be
+      # parsed to an option letter or Yes/No (not exact-match scorable).
+      "unparseable_samples": [
+          r["sample_id"] for r in rows if r.get("unparseable")
+      ],
   }
 
 
@@ -196,15 +214,28 @@ def print_report(report: dict, recall_k) -> None:
       print(row("Single-hop" if i == 0 else "", t, s["n"], s))
   print(line)
 
-  missing = sum(s["missing_predictions"] for s in report["tasks"].values())
-  unjudged = sum(s["unjudged"] for s in report["tasks"].values())
+  all_tasks = list(report["tasks"].values()) + list(
+      report["single_hop"].values()
+  )
+  missing = sum(s["missing_predictions"] for s in all_tasks)
+  unparseable = report.get("unparseable_samples", [])
+  unjudged = sum(s["unjudged"] for s in all_tasks)
   if missing:
     print(f"Missing predictions (counted as wrong): {missing}")
+  if unparseable:
+    shown = ", ".join(unparseable[:10])
+    more = f", ... (+{len(unparseable) - 10})" if len(unparseable) > 10 else ""
+    print(
+        "Multiple-choice / binary predictions not parseable to an option "
+        f"letter or Yes/No (not exact-match scorable): {len(unparseable)} "
+        f"[{shown}{more}]. Full list in report.json (`unparseable_samples`)."
+    )
   if unjudged:
     print(
-        f"Open-generation questions without a judgment: {unjudged}. "
-        "Export prompts with --export_judge_prompts, run your judge, and pass "
-        "the results via --judgments."
+        f"Questions without a judgment (open-generation or unparseable "
+        f"exact-match): {unjudged}. Export prompts with "
+        "--export_judge_prompts, run your judge, and pass the results via "
+        "--judgments."
     )
 
 
@@ -224,7 +255,8 @@ def main(argv=None):
   p.add_argument(
       "--export_judge_prompts",
       metavar="PATH",
-      help="Write judge prompts for unjudged open-generation questions.",
+      help="Write judge prompts for every question that still needs a "
+      "judgment (open-generation, and unparseable multiple-choice / binary).",
   )
   p.add_argument("--output", help="Write the full report as JSON.")
   p.add_argument("--tasks", nargs="+", help="Subset of task keys.")

@@ -30,21 +30,31 @@ JUDGMENTS = os.path.join(ROOT, "examples", "sample_judgments.jsonl")
 
 
 def test_parse_multiple_choice():
-  assert metrics.parse_multiple_choice("Answer: C") == "C"
-  assert metrics.parse_multiple_choice("The answer is (A).") == "A"
-  assert metrics.parse_multiple_choice("I think B because ...") == "B"
-  assert metrics.parse_multiple_choice("Unsure") is None
+  for text in ["C", "c", "C.", "(C)", "**C**", "Answer: C", "answer: c",
+               "Final Answer: **C**", "**Answer:** C", "The answer is (C).",
+               "Option: C", "Reasoning first.\nAnswer: C"]:
+    assert metrics.parse_multiple_choice(text) == "C", text
+  for text in ["C) A blue plaid shirt", "A blue plaid shirt",
+               "I think B because ...", '{"answer": "C"}', '["C"]',
+               "C or D", "Unsure", "", None]:
+    assert metrics.parse_multiple_choice(text) is None, text
 
 
 def test_parse_binary():
-  assert metrics.parse_binary("Yes, she is visible.") == "Yes"
-  assert metrics.parse_binary("No.") == "No"
-  assert metrics.parse_binary("Not visible") is None
+  for text in ["Yes", "yes", "No.", "**No**", "Answer: Yes",
+               "The answer is No", "YES!"]:
+    assert metrics.parse_binary(text) in ("Yes", "No"), text
+  for text in ["Yes, she is visible.", "No, it's not", "Not visible",
+               '{"Result": "Yes"}', "Yes/No", "", None]:
+    assert metrics.parse_binary(text) is None, text
 
 
-def test_exact_match_unparseable_is_wrong():
-  assert not metrics.exact_match("Unsure", "C", "multiple_choice")
-  assert not metrics.exact_match(None, "Yes", "binary")
+def test_exact_match_unparseable_is_none():
+  assert metrics.exact_match("Answer: C", "C", "multiple_choice") is True
+  assert metrics.exact_match("Answer: B", "C", "multiple_choice") is False
+  assert metrics.exact_match("Unsure", "C", "multiple_choice") is None
+  assert metrics.exact_match("Yes, she is.", "Yes", "binary") is None
+  assert metrics.exact_match(None, "Yes", "binary") is None
 
 
 def test_recall_at_k():
@@ -101,3 +111,42 @@ def test_cli(tmp_path):
       "--export_judge_prompts", str(prompts),
   ])
   assert len(data.read_jsonl(str(prompts))) == 7
+
+
+def test_unparseable_exact_match_goes_to_judge(tmp_path):
+  """An unparseable MC/binary answer is reported and judged, not scored."""
+  preds = data.load_predictions(PREDICTIONS)
+  preds["david_text_concept_qa_22"]["prediction"] = "C) Blue, like his father."
+  preds["david_visual_concept_recognition_41"]["prediction"] = "Yes, she is."
+  pred_path = tmp_path / "preds.jsonl"
+  data.write_jsonl(str(pred_path), preds.values())
+
+  questions = data.load_questions(DATA_DIR, include_easy=True)
+  rows = evaluate.score_questions(
+      questions, preds, {}, data.load_image_to_event(DATA_DIR)
+  )
+  report = evaluate.aggregate(rows)
+  assert sorted(report["unparseable_samples"]) == [
+      "david_text_concept_qa_22", "david_visual_concept_recognition_41"]
+  assert report["tasks"]["text_concept_qa"]["unparseable"] == 1
+  assert report["tasks"]["text_concept_qa"]["accuracy"] is None  # not wrong
+
+  prompts = tmp_path / "prompts.jsonl"
+  evaluate.main([
+      "--predictions", str(pred_path),
+      "--data_dir", DATA_DIR,
+      "--export_judge_prompts", str(prompts),
+  ])
+  exported = {r["sample_id"] for r in data.read_jsonl(str(prompts))}
+  assert {"david_text_concept_qa_22",
+          "david_visual_concept_recognition_41"} <= exported
+  assert len(exported) == 9
+
+  judgments = {"david_text_concept_qa_22": "correct",
+               "david_visual_concept_recognition_41": "wrong"}
+  rows = evaluate.score_questions(
+      questions, preds, judgments, data.load_image_to_event(DATA_DIR)
+  )
+  report = evaluate.aggregate(rows)
+  assert report["tasks"]["text_concept_qa"]["accuracy"] == 1.0
+  assert report["tasks"]["visual_concept_recognition"]["accuracy"] == 0.0
