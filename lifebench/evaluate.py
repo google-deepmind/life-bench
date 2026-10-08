@@ -161,34 +161,39 @@ def print_report(report: dict, recall_k) -> None:
       f"recall@{recall_k[0]}" in s for s in report["tasks"].values()
   )
   cols = ["Accuracy"] + ([f"R@{k}" for k in recall_k] if has_recall else [])
-  header = f"{'Task':<32}{'N':>7}" + "".join(f"{c:>10}" for c in cols)
+  header = f"{'Category':<25}{'Task':<32}{'N':>6}" + "".join(
+      f"{c:>10}" for c in cols
+  )
   line = "-" * len(header)
 
-  def row(name, n, s):
+  def row(category, name, n, s):
     vals = [s.get("accuracy")] + (
         [s.get(f"recall@{k}") for k in recall_k] if has_recall else []
     )
-    return f"{name:<32}{n:>7}" + "".join(f"{_fmt(v):>10}" for v in vals)
+    return f"{category:<25}{name:<32}{n:>6}" + "".join(
+        f"{_fmt(v):>10}" for v in vals
+    )
 
   print(line)
   print(header)
-  print(line)
   for cat, cat_tasks in CATEGORIES.items():
-    for t in cat_tasks:
-      if t in report["tasks"]:
-        s = report["tasks"][t]
-        print(row(TASK_NAMES[t], s["n"], s))
+    present = [t for t in cat_tasks if t in report["tasks"]]
+    if not present:
+      continue
+    print(line)
+    for i, t in enumerate(present):
+      s = report["tasks"][t]
+      print(row(cat if i == 0 else "", TASK_NAMES[t], s["n"], s))
     if cat in report["categories"]:
-      print(row(f"  {cat}", "", report["categories"][cat]))
+      print(row("", "Average", "", report["categories"][cat]))
   if report["overall"]:
     print(line)
     n = sum(s["n"] for s in report["tasks"].values())
-    print(row("Overall", n, report["overall"]))
+    print(row("Overall", "", n, report["overall"]))
   if report["single_hop"]:
     print(line)
-    print("Single-hop questions (not part of the benchmark score)")
-    for t, s in report["single_hop"].items():
-      print(row(t, s["n"], s))
+    for i, (t, s) in enumerate(report["single_hop"].items()):
+      print(row("Single-hop" if i == 0 else "", t, s["n"], s))
   print(line)
 
   missing = sum(s["missing_predictions"] for s in report["tasks"].values())
